@@ -112,6 +112,8 @@ export const messages = {
     'This removes read protection and erases the whole flash, including the flash bootloader.',
   'option_bytes.high_refused': 'High protection is not supported.',
 
+  'setup.warning':
+    'Use the tool with caution. I am not responsible for any damage to your hardware.',
   'setup.title': 'Setup notes',
   'setup.linux': 'Linux: add a udev rule granting access to the 28e9:0189 device, then replug.',
   'setup.windows': 'Windows: bind the device to WinUSB (e.g. Zadig), then replug.',

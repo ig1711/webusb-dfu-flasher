@@ -19,6 +19,7 @@ export default function TopBar(props: { flasher: Flasher }) {
       <Show when={unsupported()}>
         <p class="banner error">{t('top.unsupported')}</p>
       </Show>
+      <p class="banner error">{t('setup.warning')}</p>
       <SetupNotes />
     </header>
   );
