@@ -16,7 +16,22 @@ export default function Document(props: ParentProps) {
           name="description"
           content="Flash firmware to a GD32 microcontroller over WebUSB using the ROM DFU bootloader."
         />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+        <link rel="apple-touch-icon" href="/icon.svg" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={t('app.title')} />
+        <meta
+          property="og:description"
+          content="Flash firmware to a GD32 microcontroller over WebUSB using the ROM DFU bootloader."
+        />
+        <meta property="og:image" content="/icon.svg" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={t('app.title')} />
+        <meta
+          name="twitter:description"
+          content="Flash firmware to a GD32 microcontroller over WebUSB using the ROM DFU bootloader."
+        />
+        <meta name="twitter:image" content="/icon.svg" />
         <title>{t('app.title')}</title>
         <script>{`try{var p=localStorage.getItem('gd32f350.dfu.palette');if(p)document.documentElement.dataset.palette=p}catch(e){}`}</script>
         <HydrationScript />
