@@ -1,5 +1,5 @@
 /**
- * GD32 ROM DFU / DfuSe session.
+ * GD32 flash bootloader DFU / DfuSe session.
  *
  * Owns the USB state machine. Every method that touches flash validates its
  * inputs first and asserts the DFU status code after each transition, so a
@@ -33,8 +33,6 @@ import {
 } from './errors';
 import {
   decodeOptionBytes,
-  encodeOptionBytes,
-  type F350OptionByteValues,
   type F350OptionBytes,
 } from './optionBytes';
 import {
@@ -394,6 +392,23 @@ export class DfuSession {
     await this.abortToIdle();
   }
 
+  /**
+   * Program an arbitrary address. Debug-only: the caller is responsible for
+   * only targeting the application region. Not used by the normal UI.
+   */
+  async writeRaw(address: number, data: Uint8Array): Promise<void> {
+    if (!Number.isInteger(address) || address < 0 || address > MAX_ABS_ADDRESS) {
+      throw new ValidationError(`Invalid memory address ${address}.`);
+    }
+    if (data.length === 0) {
+      throw new ValidationError('Refusing to program an empty block.');
+    }
+    await this.setMemoryPointer(address);
+    await this.sendBlock(2, data);
+    await this.awaitDownloadComplete(TIMEOUTS.downloadStatus, `WRITE ${formatAddress(address)}`);
+    await this.abortToIdle();
+  }
+
   async writeImage(
     image: FirmwareImage,
     geometry: FlashGeometry,
@@ -403,7 +418,6 @@ export class DfuSession {
     throwIfAborted(options.signal);
 
     const eraseFirst = options.eraseFirst ?? true;
-    const allowFlashBootloader = image.kind === 'fullchip';
     const total = image.totalBytes;
     let written = 0;
     let lastAddress = image.startAddress;
@@ -413,9 +427,7 @@ export class DfuSession {
       if (eraseFirst) {
         const pageSet = new Set<number>();
         for (const segment of image.segments) {
-          for (const page of pagesForRange(segment.address, segment.data.length, geometry, {
-            allowFlashBootloader,
-          })) {
+          for (const page of pagesForRange(segment.address, segment.data.length, geometry)) {
             pageSet.add(page);
           }
         }
@@ -581,18 +593,6 @@ export class DfuSession {
     await this.abortToIdle();
     await this.recoverToIdle();
     return decodeOptionBytes(raw);
-  }
-
-  async storeOptionBytes(values: F350OptionByteValues, geometry: FlashGeometry): Promise<void> {
-    assertPageAligned(geometry.optionByteBase, geometry);
-    const payload = encodeOptionBytes(values);
-
-    await this.eraseSector(geometry.optionByteBase, geometry);
-    await this.setMemoryPointer(geometry.optionByteBase);
-    await this.sendBlock(2, payload);
-    await this.awaitDownloadComplete(TIMEOUTS.downloadStatus, 'WRITE OPTION BYTES');
-    await this.abortToIdle();
-    await this.recoverToIdle();
   }
 
   async rebootToApplication(entryAddress: number, geometry?: FlashGeometry): Promise<void> {

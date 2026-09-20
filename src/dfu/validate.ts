@@ -126,41 +126,22 @@ export function assertAppRange(start: number, length: number, geometry: FlashGeo
   }
 }
 
-export interface ImageRangeOptions {
-  /** Allow writing the flash bootloader region (full-chip restore only). */
-  allowFlashBootloader?: boolean;
-}
-
-/** Range guard for a firmware image, honouring the application-only default. */
-export function assertImageRange(
-  start: number,
-  length: number,
-  geometry: FlashGeometry,
-  options: ImageRangeOptions = {},
-): void {
-  if (options.allowFlashBootloader) {
-    assertFlashRange(start, length, geometry);
-  } else {
-    assertAppRange(start, length, geometry);
-  }
-}
-
 /**
  * Addresses of every page touched by `[start, start + length)`, aligned down
- * to page boundaries.
+ * to page boundaries. Refuses any page inside the flash bootloader region: the
+ * bootloader is never a valid erase target.
  */
 export function pagesForRange(
   start: number,
   length: number,
   geometry: FlashGeometry,
-  options: ImageRangeOptions = {},
 ): number[] {
   assertFlashRange(start, length, geometry);
   const first = Math.floor(start / geometry.pageSize) * geometry.pageSize;
   const last = start + length - 1;
   const pages: number[] = [];
   for (let address = first; address <= last; address += geometry.pageSize) {
-    if (!options.allowFlashBootloader && address < APP_BASE) {
+    if (address < APP_BASE) {
       throw new ValidationError(
         `Refusing to erase page ${formatAddress(address)}: it is inside the protected flash bootloader region.`,
       );

@@ -1,5 +1,6 @@
 /**
- * Protocol constants for the GD32 ROM DFU bootloader (DfuSe flavour).
+ * Protocol constants for the GD32 DfuSe interface exposed by the device's
+ * flash bootloader (the 16 KB user bootloader at 0x08000000).
  *
  * Everything the rest of the app needs to know about "magic numbers" lives
  * here so there is a single place to audit.
@@ -15,7 +16,7 @@ export const TRANSFER_BLOCK_SIZE = 1024;
 /** Timeouts (ms). Kept explicit so the state machine can be reasoned about. */
 export const TIMEOUTS = {
   controlTransfer: 5_000,
-  stringDescriptor: 400,
+  stringDescriptor: 1_000,
   downloadStatus: 3_000,
   eraseSector: 10_000,
   idleRecovery: 500,
@@ -106,14 +107,10 @@ export enum DfuSeCommand {
   EraseSector = 0x41,
 }
 
-/** USB string descriptor indices used by the GD32 ROM DFU bootloader. */
+/** USB string descriptor indices used by the flash bootloader's DFU. */
 export const STRING_INDEX = {
   mcuId: 3,
-  protection: 5,
 } as const;
-
-/** A read-protection string that starts with this marker means "unlocked". */
-export const UNPROTECTED_MARKER = '@';
 
 /** Flash / option-byte layout defaults (GD32F350). */
 export const SRAM_BASE = 0x2000_0000;

@@ -6,14 +6,14 @@ import {
   type RouteSectionProps,
 } from '@solidjs/router';
 import ApplicationPage from './pages/ApplicationPage';
-import FullChipPage from './pages/FullChipPage';
+import DebugPage from './pages/DebugPage';
 import { t } from './i18n/context';
 import './styles/app.css';
 
 const Router = createRouter({
   routes: [
     { path: '/', component: ApplicationPage },
-    { path: '/fullchip', component: FullChipPage },
+    { path: '/debug', component: DebugPage },
     { path: '*404', component: ApplicationPage },
   ],
   // Browser history for clean URLs on the client; memory history is used
@@ -24,16 +24,17 @@ const Router = createRouter({
 function Layout(props: RouteSectionProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const onFullChip = () => location.pathname.startsWith('/fullchip');
+  const isActive = (path: string) =>
+    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
 
   return (
     <main class="app">
       <nav class="nav">
-        <button class={onFullChip() ? '' : 'active'} onClick={() => navigate('/')}>
+        <button class={isActive('/') ? 'active' : ''} onClick={() => navigate('/')}>
           {t('nav.application')}
         </button>
-        <button class={onFullChip() ? 'active' : ''} onClick={() => navigate('/fullchip')}>
-          {t('nav.fullchip')}
+        <button class={isActive('/debug') ? 'active' : ''} onClick={() => navigate('/debug')}>
+          {t('nav.debug')}
         </button>
       </nav>
       {props.children}

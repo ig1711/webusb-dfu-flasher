@@ -136,11 +136,14 @@ export async function runDeviceChecks(
     id: 'protection',
     label: 'Security protection',
     status: 'pass',
-    detail: optionBytes.level === 'none' ? 'None (0xA5)' : 'Low (0xBB)',
+    detail:
+      optionBytes.level === 'none'
+        ? 'None (0xA5)'
+        : 'Low (>0xA5/<0xCC): debug access restricted; DFU reads and app writes still work',
   });
 
-  // 4. Layout: vector table fingerprint. A successful read proves the ROM DFU
-  //    bootloader (system memory, outside flash) serves flash.
+  // 4. Layout: vector table fingerprint. A successful read proves the flash
+  //    bootloader's DFU serves main flash.
   const windowLength = APP_BASE - FLASH_BOOTLOADER_BASE + 64;
   let window: Uint8Array;
   try {
@@ -169,13 +172,14 @@ export async function runDeviceChecks(
     detail: `16 KB flash bootloader at ${formatAddress(FLASH_BOOTLOADER_BASE)}, application at ${formatAddress(APP_BASE)}`,
   });
 
-  // 5. ROM DFU bootloader access axis (hint from string 5, confirmed by the read above).
+  // 5. DFU access: the read above already proved the bootloader serves main
+  //    flash. There is no separate protection signal to read here.
   const romBootloaderAccess: RomBootloaderAccess = 'accessible';
   report({
     id: 'rom-bootloader-access',
-    label: 'ROM DFU bootloader access',
+    label: 'DFU bootloader access',
     status: 'pass',
-    detail: identity.romBootloaderAccess === 'blocked' ? 'Accessible (string hint disagreed)' : 'Accessible',
+    detail: 'Accessible (confirmed by the flash read above)',
   });
 
   return {

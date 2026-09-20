@@ -1,9 +1,9 @@
 /**
  * User-facing English strings.
  *
- * Naming note: there are two bootloaders. "ROM DFU bootloader" is in system
- * memory outside main flash (the USB device we talk to). "Flash bootloader" is
- * the user bootloader stored in the first 16 KB of main flash.
+ * Naming note: the USB DFU device is the "flash bootloader" stored in the
+ * first 16 KB of main flash at 0x08000000 (it has no ROM-bootloader jump).
+ * The application lives at 0x08004000.
  */
 
 export const messages = {
@@ -11,7 +11,19 @@ export const messages = {
   'app.subtitle': '16 KB flash bootloader / application at 0x08004000',
 
   'nav.application': 'Flash application',
-  'nav.fullchip': 'Full-chip restore',
+  'nav.debug': 'Debug',
+
+  'debug.title': 'Debug & diagnostics',
+  'debug.intro':
+    'Read-only probes come first. Every section keeps its raw output so it can be copied and compared against the flash dump. The erase/write probe only touches unused padding.',
+  'debug.recovery':
+    'The DFU device is the 16 KB flash bootloader itself, entered by the PA1 strap (the button), not BOOT0. It has no ROM-bootloader jump and there is no debug probe. The bootloader ignores erase/write of its own 16 KB (the DFU layer still reports success), so 0x08000000 cannot be reprogrammed by this tool.',
+  'debug.run': 'Run',
+  'debug.copy': 'Copy',
+  'debug.copied': 'Copied',
+  'debug.risk_readonly': 'Read-only',
+  'debug.risk_risky': 'Padding write',
+  'debug.risk_destructive': 'Destructive',
 
   'top.unsupported': 'WebUSB is unavailable. Use Chrome/Edge on a secure (HTTPS or localhost) origin.',
   'top.setup': 'Setup notes',
@@ -24,12 +36,13 @@ export const messages = {
   'device.verifying': 'Verifying…',
   'device.connected': 'Connected',
   'device.disconnected': 'Not connected',
+  'device.verification_failed': 'Verification failed',
   'device.part_number': 'Part number',
   'device.mcu_id': 'MCU ID',
   'device.flash': 'Flash',
   'device.page_size': 'Page size',
   'device.checks': 'Verification',
-  'device.rom_bootloader_access': 'ROM DFU bootloader access',
+  'device.rom_bootloader_access': 'DFU bootloader access',
   'device.flash_bootloader': 'Flash bootloader (protected)',
   'device.access_accessible': 'Accessible',
   'device.access_blocked': 'Blocked',
@@ -55,24 +68,7 @@ export const messages = {
   'flash.reboot': 'Reboot to firmware when done',
   'flash.burn': 'Write firmware',
   'flash.read_backup': 'Read full flash (backup)',
-  'flash.option_bytes': 'Option bytes…',
   'flash.reboot_only': 'Reboot device',
-
-  'fullchip.title': 'Full-chip restore',
-  'fullchip.subtitle':
-    'Restore a complete flash image, including the 16 KB flash bootloader, from 0x08000000.',
-  'fullchip.toggle': 'This file is a full-chip backup (includes the flash bootloader)',
-  'fullchip.warning':
-    'Writing a full-chip image overwrites the flash bootloader. If it is wrong or the write is interrupted, the device will not boot and can only be recovered over the ROM DFU bootloader by driving BOOT0.',
-  'fullchip.match_ok': 'The file flash bootloader matches the device.',
-  'fullchip.match_mismatch':
-    'Warning: the file flash bootloader does NOT match the device. Restoring may change boot behaviour.',
-  'fullchip.match_unavailable':
-    'Warning: the device flash bootloader could not be compared; proceeding is at your own risk.',
-  'fullchip.verify_forced': 'Verification is always performed for full-chip writes.',
-  'fullchip.no_backup_note': 'No backup is required on this page.',
-  'fullchip.confirm_label': 'Restore full chip',
-  'fullchip.confirm_prompt': 'Type FULLCHIP to confirm overwriting the flash bootloader.',
 
   'gate.backup_first': 'Create a full flash backup before modifying anything.',
   'gate.backup_required': 'Read full flash once to enable writing.',
@@ -92,26 +88,6 @@ export const messages = {
   'confirm.title': 'Confirm',
   'confirm.cancel': 'Cancel',
 
-  'option_bytes.title': 'Option bytes (0x1FFFF800)',
-  'option_bytes.spc': 'Security protection (SPC)',
-  'option_bytes.spc_none': '0xA5 — none',
-  'option_bytes.spc_low': '0xBB — low',
-  'option_bytes.user': 'USER flags',
-  'option_bytes.user_wdg': 'Independent watchdog',
-  'option_bytes.user_stop': 'Reset on stop mode',
-  'option_bytes.user_standby': 'Reset on standby mode',
-  'option_bytes.data0': 'DATA0',
-  'option_bytes.data1': 'DATA1',
-  'option_bytes.wp0': 'WP0',
-  'option_bytes.wp1': 'WP1',
-  'option_bytes.raw': 'Raw option bytes',
-  'option_bytes.save': 'Save',
-  'option_bytes.loaded': 'Option bytes loaded.',
-  'option_bytes.saved': 'Option bytes written. Power-cycle may be required.',
-  'option_bytes.erase_warning':
-    'This removes read protection and erases the whole flash, including the flash bootloader.',
-  'option_bytes.high_refused': 'High protection is not supported.',
-
   'setup.warning':
     'Use the tool with caution. I am not responsible for any damage to your hardware.',
   'setup.title': 'Setup notes',
@@ -119,7 +95,7 @@ export const messages = {
   'setup.windows': 'Windows: bind the device to WinUSB (e.g. Zadig), then replug.',
   'setup.browser': 'Browser: Chrome or Edge over HTTPS or localhost. WebUSB is required.',
   'setup.rom_bootloader':
-    'ROM DFU bootloader: drive BOOT0 high and reset the board. It lives in system memory, outside main flash.',
+    'DFU entry: the 16 KB flash bootloader runs its own USB DFU. Hold the PA1 strap (the button) and reset to re-enter it; it has no ROM-bootloader jump, so do not erase 0x08000000.',
   'setup.binary': 'Firmware: use the decrypted application binary only, never a full-flash dump.',
 
   'error.prefix': 'Error: {message}',

@@ -36,6 +36,16 @@ export default function DeviceCard(props: { flasher: Flasher }) {
     }
   };
 
+  const statusLabel = () => {
+    if (!connected()) return t('device.disconnected');
+    if (props.flasher.verified()) return t('device.connected');
+    if (props.flasher.busy()) return t('device.verifying');
+    if (props.flasher.checks().some((check) => check.status === 'fail')) {
+      return t('device.verification_failed');
+    }
+    return t('device.verifying');
+  };
+
   return (
     <section class="card device">
       <h2>{t('device.title')}</h2>
@@ -61,11 +71,7 @@ export default function DeviceCard(props: { flasher: Flasher }) {
           </button>
         </Show>
         <span class="status">
-          {connected()
-            ? props.flasher.verified()
-              ? t('device.connected')
-              : t('device.verifying')
-            : t('device.disconnected')}
+          {statusLabel()}
         </span>
       </div>
 

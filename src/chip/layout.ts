@@ -1,11 +1,9 @@
 /**
  * Fixed-layout fingerprint for supported tablets.
  *
- * There are two bootloaders in play:
- *  - the ROM DFU bootloader, in system memory outside main flash (the USB
- *    device we talk to); and
- *  - the flash bootloader, user code stored in the first 16 KB of main flash
- *    at 0x08000000.
+ * The USB DFU device is the flash bootloader itself, user code stored in the
+ * first 16 KB of main flash at 0x08000000 (it has no ROM-bootloader jump). The
+ * application starts at 0x08004000.
  *
  * Supported devices have flash vector tables at 0x08000000 (flash bootloader)
  * and 0x08004000 (application), with none in between. Anything else is
@@ -75,7 +73,7 @@ export function findVectorTables(
     if (table) tables.push(table);
   }
   // Also allow a table at the very end of the window even if page stepping
-  // missed it (no-op for our fixed 0x4010-byte read).
+  // missed it (no-op for our fixed 0x4040-byte read).
   return tables;
 }
 

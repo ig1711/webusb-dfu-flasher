@@ -1,3 +1,4 @@
+import { onCleanup } from 'solid-js';
 import { createFlasher } from '../flasher/controller';
 import { useUsbHotplug } from '../flasher/hotplug';
 import TopBar from '../components/TopBar';
@@ -10,6 +11,9 @@ import LogTerminal from '../components/LogTerminal';
 export default function ApplicationPage() {
   const flasher = createFlasher();
   useUsbHotplug(flasher);
+  onCleanup(() => {
+    void flasher.disconnect();
+  });
 
   return (
     <>

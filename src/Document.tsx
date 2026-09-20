@@ -14,7 +14,7 @@ export default function Document(props: ParentProps) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta
           name="description"
-          content="Flash firmware to a GD32 microcontroller over WebUSB using the ROM DFU bootloader."
+          content="Flash firmware to a GD32 microcontroller over WebUSB using the flash bootloader's DfuSe interface."
         />
         <link rel="icon" type="image/svg+xml" href="/icon.svg" />
         <link rel="apple-touch-icon" href="/icon.svg" />
@@ -22,14 +22,14 @@ export default function Document(props: ParentProps) {
         <meta property="og:title" content={t('app.title')} />
         <meta
           property="og:description"
-          content="Flash firmware to a GD32 microcontroller over WebUSB using the ROM DFU bootloader."
+          content="Flash firmware to a GD32 microcontroller over WebUSB using the flash bootloader's DfuSe interface."
         />
         <meta property="og:image" content="/icon.svg" />
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:title" content={t('app.title')} />
         <meta
           name="twitter:description"
-          content="Flash firmware to a GD32 microcontroller over WebUSB using the ROM DFU bootloader."
+          content="Flash firmware to a GD32 microcontroller over WebUSB using the flash bootloader's DfuSe interface."
         />
         <meta name="twitter:image" content="/icon.svg" />
         <title>{t('app.title')}</title>

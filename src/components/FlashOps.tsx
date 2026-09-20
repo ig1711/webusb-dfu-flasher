@@ -1,13 +1,11 @@
 import { Show, createSignal } from 'solid-js';
 import type { Flasher } from '../flasher/controller';
 import { t } from '../i18n/context';
-import OptionBytesDialog from './OptionBytesDialog';
 
 export default function FlashOps(props: { flasher: Flasher }) {
   const [eraseFirst, setEraseFirst] = createSignal(true);
   const [verify, setVerify] = createSignal(true);
   const [reboot, setReboot] = createSignal(false);
-  const [optionBytesOpen, setOptionBytesOpen] = createSignal(false);
 
   function downloadBackup(bytes: Uint8Array): void {
     const blob = new Blob([bytes as unknown as BlobPart], { type: 'application/octet-stream' });
@@ -77,15 +75,6 @@ export default function FlashOps(props: { flasher: Flasher }) {
         >
           {t('flash.read_backup')}
         </button>
-        <button
-          disabled={!props.flasher.canModify()}
-          onClick={() => {
-            setOptionBytesOpen(true);
-            void props.flasher.reloadOptionBytes();
-          }}
-        >
-          {t('flash.option_bytes')}
-        </button>
         <button disabled={!props.flasher.canModify()} onClick={() => void props.flasher.reboot()}>
           {t('flash.reboot_only')}
         </button>
@@ -94,12 +83,6 @@ export default function FlashOps(props: { flasher: Flasher }) {
       <Show when={props.flasher.connection() !== 'disconnected' && props.flasher.blockReason()}>
         <p class="banner warn">{props.flasher.blockReason()}</p>
       </Show>
-
-      <OptionBytesDialog
-        open={optionBytesOpen()}
-        flasher={props.flasher}
-        onClose={() => setOptionBytesOpen(false)}
-      />
     </section>
   );
 }

@@ -1,18 +1,15 @@
 /**
  * Firmware images.
  *
- * Two kinds are supported:
- *  - `application`: a raw update binary programmed at APP_BASE (0x08004000);
- *  - `fullchip`: a complete flash image including the 16 KB flash bootloader,
- *    programmed at 0x08000000. Used only for explicit full-chip restore.
+ * Only the `application` kind is supported: a raw update binary programmed at
+ * APP_BASE (0x08004000). The flash bootloader region cannot be erased or
+ * written by the bootloader itself, so full-chip restore is deliberately not
+ * offered (see the repo docs).
  */
 
-import { APP_BASE, FLASH_BOOTLOADER_BASE } from '../dfu/codes';
+import { APP_BASE } from '../dfu/codes';
 import { ValidationError } from '../dfu/errors';
-import { assertImageRange, formatAddress, type FlashGeometry } from '../dfu/validate';
-import { assertKnownLayout } from '../chip/layout';
-
-export type ImageKind = 'application' | 'fullchip';
+import { assertAppRange, formatAddress, type FlashGeometry } from '../dfu/validate';
 
 export interface FirmwareSegment {
   readonly address: number;
@@ -20,7 +17,6 @@ export interface FirmwareSegment {
 }
 
 export interface FirmwareImage {
-  readonly kind: ImageKind;
   readonly segments: readonly FirmwareSegment[];
   readonly startAddress: number;
   readonly endAddressExclusive: number;
@@ -38,7 +34,6 @@ export function createFirmwareImage(
   }
   const data = bytes.slice();
   return {
-    kind: 'application',
     segments: [{ address: APP_BASE, data }],
     startAddress: APP_BASE,
     endAddressExclusive: APP_BASE + data.length,
@@ -47,46 +42,14 @@ export function createFirmwareImage(
   };
 }
 
-/**
- * Full-chip image, programmed at 0x08000000. The file must be exactly one
- * flash worth of bytes and must contain the expected flash bootloader and
- * application vector tables; otherwise it is rejected.
- */
-export function createFullChipImage(
-  bytes: Uint8Array,
-  geometry: FlashGeometry,
-  sram: { start: number; end: number },
-  sourceName: string | null = null,
-): FirmwareImage {
-  if (bytes.length !== geometry.flashBytes) {
-    throw new ValidationError(
-      `A full-chip image must be exactly ${geometry.flashBytes.toLocaleString()} bytes, ` +
-        `but the file is ${bytes.length.toLocaleString()} bytes.`,
-    );
-  }
-  // Throws unless the file has the known flash bootloader + application layout.
-  assertKnownLayout(bytes, geometry.flashBase, geometry, sram);
-
-  const data = bytes.slice();
-  return {
-    kind: 'fullchip',
-    segments: [{ address: FLASH_BOOTLOADER_BASE, data }],
-    startAddress: FLASH_BOOTLOADER_BASE,
-    endAddressExclusive: FLASH_BOOTLOADER_BASE + data.length,
-    totalBytes: data.length,
-    sourceName,
-  };
-}
-
-/** Ensure the image fits the chip and respects the app/full-chip write policy. */
+/** Ensure the image fits the application region above the 16 KB flash bootloader. */
 export function assertFirmwareFits(image: FirmwareImage, geometry: FlashGeometry): void {
   if (image.totalBytes <= 0) {
     throw new ValidationError('The firmware image is empty.');
   }
-  const allowFlashBootloader = image.kind === 'fullchip';
   for (const segment of image.segments) {
     try {
-      assertImageRange(segment.address, segment.data.length, geometry, { allowFlashBootloader });
+      assertAppRange(segment.address, segment.data.length, geometry);
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
       throw new ValidationError(

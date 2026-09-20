@@ -1137,6 +1137,103 @@ input[type='checkbox'] {
   display: none;
 }
 
+/* Debug page ------------------------------------------------------------ */
+
+.debug-order {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.debug-section {
+  gap: 0.5rem;
+}
+
+.debug-meta {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.debug-badge {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius);
+  border: 2px solid currentColor;
+  white-space: nowrap;
+}
+
+.debug-read-only {
+  color: var(--success);
+}
+
+.debug-risky {
+  color: var(--warn);
+}
+
+.debug-destructive {
+  color: var(--danger);
+}
+
+.debug-actions {
+  border-top: 1px dashed var(--line-soft);
+  padding-top: 0.55rem;
+}
+
+.debug-actions input[type='text'] {
+  width: auto;
+  min-width: 13rem;
+  flex: 0 1 13rem;
+}
+
+.debug-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  border-top: 1px dashed var(--line-soft);
+  padding-top: 0.55rem;
+}
+
+.debug-result-title {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+
+.debug-output {
+  margin: 0;
+  max-height: 20rem;
+  overflow: auto;
+  background: var(--log-bg);
+  color: var(--log-fg);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ok {
+  margin: 0;
+  color: var(--success);
+  font-size: 0.84rem;
+}
+
 /* Modal ----------------------------------------------------------------- */
 
 .modal-backdrop {

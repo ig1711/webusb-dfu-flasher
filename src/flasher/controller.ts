@@ -1,37 +1,23 @@
 /**
  * UI-facing flasher state.
  *
- * Used by both pages:
- *  - application mode (default): connect & verify -> required full-flash backup
- *    -> write the update binary at 0x08004000;
- *  - full-chip mode (`requireBackup: false`): connect & verify -> write a
- *    complete flash image at 0x08000000 (explicit restore only).
+ * Application mode: connect & verify -> required full-flash backup -> write the
+ * update binary at 0x08004000. Full-chip restore is deliberately not offered
+ * (the flash bootloader ignores erase/write of its own 16 KB; see repo docs).
  */
 
 import { createMemo, createSignal } from 'solid-js';
 import { DfuSession, type ProgressUpdate } from '../dfu/session';
-import { APP_BASE, FLASH_BOOTLOADER_SIZE } from '../dfu/codes';
-import {
-  applyOptionBytePatch,
-  isWritableLevel,
-  SPC_HIGH,
-  type F350OptionBytes,
-  type F350OptionByteValues,
-} from '../dfu/optionBytes';
+import { APP_BASE } from '../dfu/codes';
+import { isWritableLevel, type F350OptionBytes } from '../dfu/optionBytes';
 import { isDfuError, PartialWriteError } from '../dfu/errors';
 import { isWebUsbSupported, type UsbDeviceLike } from '../dfu/usb';
-import {
-  createFirmwareImage,
-  createFullChipImage,
-  type FirmwareImage,
-  type ImageKind,
-} from '../firmware/image';
+import { createFirmwareImage, type FirmwareImage } from '../firmware/image';
 import { runDeviceChecks, type CheckOutcome, type VerifiedDevice } from './checks';
 import { t } from '../i18n/context';
 import { createLogger } from './log';
 
 export type ConnectionState = 'unsupported' | 'disconnected' | 'connecting' | 'connected';
-export type FlashBootloaderMatch = 'match' | 'mismatch' | 'unavailable';
 
 const STORAGE_KEY = 'gd32f350.dfu.dumpedDevices';
 
@@ -62,14 +48,6 @@ function recordDumped(partNumber: string): void {
   }
 }
 
-function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) return false;
-  for (let index = 0; index < a.length; index++) {
-    if (a[index] !== b[index]) return false;
-  }
-  return true;
-}
-
 export interface FlasherOptions {
   /** Require a full-flash backup once before enabling writes (application page). */
   requireBackup?: boolean;
@@ -95,7 +73,6 @@ export function createFlasher(options: FlasherOptions = {}) {
   const [optionBytes, setOptionBytes] = createSignal<F350OptionBytes | null>(null);
   const [image, setImage] = createSignal<FirmwareImage | null>(null);
   const [fileName, setFileName] = createSignal<string | null>(null);
-  const [bootloaderMatch, setBootloaderMatch] = createSignal<FlashBootloaderMatch | null>(null);
   const [busy, setBusy] = createSignal(false);
   const [operation, setOperation] = createSignal<string | null>(null);
   const [progress, setProgress] = createSignal<ProgressUpdate | null>(null);
@@ -152,7 +129,6 @@ export function createFlasher(options: FlasherOptions = {}) {
     setChecks([]);
     setVerified(null);
     setOptionBytes(null);
-    setBootloaderMatch(null);
     setDumpSatisfied(false);
 
     const opened = await guarded('Connect & verify', async () => {
@@ -190,7 +166,6 @@ export function createFlasher(options: FlasherOptions = {}) {
     setOptionBytes(null);
     setDumpSatisfied(false);
     setChecks([]);
-    setBootloaderMatch(null);
     setConnection(isWebUsbSupported() ? 'disconnected' : 'unsupported');
     logger.append('Disconnected.');
   }
@@ -205,35 +180,21 @@ export function createFlasher(options: FlasherOptions = {}) {
 
   // --- firmware -----------------------------------------------------------
 
-  function loadFile(file: File, kind: ImageKind = 'application'): void {
-    const current = verified();
-    if (!canModify() || !current) {
+  function loadFile(file: File): void {
+    if (!canModify() || !verified()) {
       logger.append(blockReason() || t('gate.backup_first'), 'error');
       return;
     }
     setFileName(file.name);
-    setBootloaderMatch(null);
     void file
       .arrayBuffer()
       .then((buffer) => {
-        const bytes = new Uint8Array(buffer);
-        if (kind === 'fullchip') {
-          const loaded = createFullChipImage(bytes, current.geometry, current.sram, file.name);
-          setImage(loaded);
-          evaluateBootloaderMatch(loaded, current);
-          logger.append(
-            `Loaded full-chip image ${file.name} (${loaded.totalBytes.toLocaleString()} bytes).`,
-            'success',
-          );
-        } else {
-          const loaded = createFirmwareImage(bytes, file.name);
-          setImage(loaded);
-          setBootloaderMatch(null);
-          logger.append(
-            t('firmware.loaded', { name: file.name, bytes: loaded.totalBytes }),
-            'success',
-          );
-        }
+        const loaded = createFirmwareImage(new Uint8Array(buffer), file.name);
+        setImage(loaded);
+        logger.append(
+          t('firmware.loaded', { name: file.name, bytes: loaded.totalBytes }),
+          'success',
+        );
       })
       .catch((error) => {
         setImage(null);
@@ -241,28 +202,9 @@ export function createFlasher(options: FlasherOptions = {}) {
       });
   }
 
-  function evaluateBootloaderMatch(loaded: FirmwareImage, device: VerifiedDevice): void {
-    const segment = loaded.segments[0];
-    const fileBoot = segment.data.subarray(0, FLASH_BOOTLOADER_SIZE);
-    const deviceBoot = device.flashBootloader;
-    if (!deviceBoot || deviceBoot.length < FLASH_BOOTLOADER_SIZE) {
-      setBootloaderMatch('unavailable');
-      logger.append(t('fullchip.match_unavailable'), 'warn');
-      return;
-    }
-    if (bytesEqual(deviceBoot, fileBoot)) {
-      setBootloaderMatch('match');
-      logger.append(t('fullchip.match_ok'));
-    } else {
-      setBootloaderMatch('mismatch');
-      logger.append(t('fullchip.match_mismatch'), 'warn');
-    }
-  }
-
   function clearImage(): void {
     setImage(null);
     setFileName(null);
-    setBootloaderMatch(null);
   }
 
   // --- backup (required once on the application page) --------------------
@@ -302,10 +244,7 @@ export function createFlasher(options: FlasherOptions = {}) {
     }
     if (!current || !currentImage) return;
 
-    const fullChip = currentImage.kind === 'fullchip';
-    const mustVerify = fullChip || options.verify;
-
-    await guarded(fullChip ? 'Write full-chip image' : 'Write firmware', async () => {
+    await guarded('Write firmware', async () => {
       const controller = new AbortController();
       abortController = controller;
       try {
@@ -316,7 +255,7 @@ export function createFlasher(options: FlasherOptions = {}) {
         });
         logger.append('Write complete.', 'success');
 
-        if (mustVerify) {
+        if (options.verify) {
           await session.verifyImage(currentImage, current.geometry, {
             onProgress: setProgress,
             signal: controller.signal,
@@ -334,46 +273,6 @@ export function createFlasher(options: FlasherOptions = {}) {
         if (error instanceof PartialWriteError) logger.append(t('error.partial_write'), 'error');
         throw error;
       }
-    });
-  }
-
-  async function reloadOptionBytes(): Promise<void> {
-    const current = verified();
-    if (!current) {
-      logger.append(blockReason(), 'error');
-      return;
-    }
-    await guarded('Load option bytes', async () => {
-      setOptionBytes(await session.loadOptionBytes(current.geometry));
-      logger.append(t('option_bytes.loaded'), 'success');
-    });
-  }
-
-  async function saveOptionBytes(patch: Partial<F350OptionByteValues>): Promise<void> {
-    const current = verified();
-    const currentOptionBytes = optionBytes();
-    if (!current || !currentOptionBytes) {
-      logger.append(blockReason(), 'error');
-      return;
-    }
-    if (!canModify()) {
-      logger.append(t('gate.backup_first'), 'error');
-      return;
-    }
-
-    const next = applyOptionBytePatch(currentOptionBytes, patch);
-    if (next.spc === SPC_HIGH) {
-      logger.append(t('error.protection_high'), 'error');
-      return;
-    }
-    if (currentOptionBytes.level !== 'none' && next.spc === 0xa5) {
-      logger.append('Removing read protection triggers a full flash erase, including the flash bootloader.', 'warn');
-    }
-
-    await guarded('Write option bytes', async () => {
-      await session.storeOptionBytes(next, current.geometry);
-      setOptionBytes(await session.loadOptionBytes(current.geometry));
-      logger.append(t('option_bytes.saved'), 'success');
     });
   }
 
@@ -396,8 +295,21 @@ export function createFlasher(options: FlasherOptions = {}) {
     return error instanceof Error ? error.message : String(error);
   }
 
+  /**
+   * Run an arbitrary device operation under the shared busy guard. Used by the
+   * debug page so its raw probes cannot race a normal flash operation.
+   */
+  async function runOperation<T>(label: string, run: () => Promise<T>): Promise<T | undefined> {
+    let result: T | undefined;
+    const succeeded = await guarded(label, async () => {
+      result = await run();
+    });
+    return succeeded ? result : undefined;
+  }
+
   return {
     logger,
+    session,
     connection,
     checks,
     verified,
@@ -407,7 +319,6 @@ export function createFlasher(options: FlasherOptions = {}) {
     protection,
     image,
     fileName,
-    bootloaderMatch,
     busy,
     operation,
     progress,
@@ -422,9 +333,8 @@ export function createFlasher(options: FlasherOptions = {}) {
     clearImage,
     readBackup,
     burn,
-    reloadOptionBytes,
-    saveOptionBytes,
     reboot,
+    runOperation,
   };
 }
 

@@ -11,7 +11,6 @@ import {
 } from '../dfu/errors';
 import { identifyChip } from '../dfu/descriptors';
 import { DfuRequest, DfuStatusCode } from '../dfu/codes';
-import { applyOptionBytePatch, encodeOptionBytes } from '../dfu/optionBytes';
 import { createFirmwareImage, type FirmwareImage } from '../firmware/image';
 import type { FlashGeometry } from '../dfu/validate';
 import { MockDfuDevice } from '../mocks/webusb';
@@ -73,7 +72,6 @@ describe('DfuSession.writeImage / readFlash', () => {
     await session.open();
 
     const rogue: FirmwareImage = {
-      kind: 'application',
       segments: [{ address: 0x0800_0000, data: payload(16) }],
       startAddress: 0x0800_0000,
       endAddressExclusive: 0x0800_0010,
@@ -153,24 +151,6 @@ describe('DfuSession.writeImage / readFlash', () => {
   });
 });
 
-describe('DfuSession option bytes', () => {
-  it('round-trips a read-modify-write', async () => {
-    const device = makeDevice();
-    device.optionBytes.set(encodeOptionBytes({ spc: 0xa5, user: 0xff, data0: 0xff, data1: 0xff, wp0: 0xff, wp1: 0xff }));
-    const session = createSession(device);
-    await session.open();
-
-    const loaded = await session.loadOptionBytes(geometry);
-    expect(loaded.level).toBe('none');
-
-    await session.storeOptionBytes(applyOptionBytePatch(loaded, { spc: 0xbb, wp0: 0x0f }), geometry);
-    const after = await session.loadOptionBytes(geometry);
-    expect(after.spc).toBe(0xbb);
-    expect(after.level).toBe('low');
-    expect(after.wp0).toBe(0x0f);
-  });
-});
-
 describe('identifyChip', () => {
   it('resolves an F350 part', async () => {
     const device = makeDevice();
@@ -186,5 +166,22 @@ describe('identifyChip', () => {
     const identity = await identifyChip(device);
     expect(identity.identified).toBe(false);
     expect(identity.part).toBeNull();
+  });
+
+  it('reads the MCU ID from an ASCII string-3 descriptor', async () => {
+    const device = new MockDfuDevice({ strings: { 3: '5R8G' } });
+    await device.open();
+    const identity = await identifyChip(device);
+    expect(identity.mcuid).toBe('5R8G');
+    expect(identity.part?.partNumber).toBe('GD32F350R8T6');
+  });
+
+  it('recovers the MCU ID from a UTF-16-misdecoded serial', async () => {
+    // "5R8G" ASCII bytes decoded as UTF-16LE by WebUSB.
+    const device = new MockDfuDevice({ serialNumber: '\u5235\u4738' });
+    await device.open();
+    const identity = await identifyChip(device);
+    expect(identity.mcuid).toBe('5R8G');
+    expect(identity.part?.partNumber).toBe('GD32F350R8T6');
   });
 });
