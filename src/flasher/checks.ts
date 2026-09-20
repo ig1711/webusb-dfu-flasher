@@ -15,7 +15,13 @@ import { geometryFor, sramRangeFor } from '../chip/geometry';
 import { assertKnownLayout, type LayoutFingerprint } from '../chip/layout';
 import type { F350Part } from '../chip/f350';
 
-export type CheckId = 'identity' | 'geometry' | 'protection' | 'flash-bootloader-layout' | 'rom-bootloader-access';
+export type CheckId =
+  | 'identity'
+  | 'supported-model'
+  | 'geometry'
+  | 'protection'
+  | 'flash-bootloader-layout'
+  | 'rom-bootloader-access';
 
 export interface CheckOutcome {
   id: CheckId;
@@ -50,6 +56,10 @@ export class DeviceCheckError extends Error {
 export interface RunChecksOptions {
   onOutcome?: (outcome: CheckOutcome) => void;
   signal?: AbortSignal;
+  /** Reject devices whose MCU ID is not this one (single-tablet pages). */
+  requiredMcuid?: string;
+  /** Human-readable name of the required device, used in the failure message. */
+  requiredModelLabel?: string;
 }
 
 export async function runDeviceChecks(
@@ -84,6 +94,24 @@ export async function runDeviceChecks(
     status: 'pass',
     detail: `${part.partNumber} (MCU ID ${identity.mcuid})`,
   });
+
+  // 1b. Optional single-tablet gate: a page may require one exact part.
+  if (options.requiredMcuid) {
+    const target = options.requiredModelLabel ?? `MCU ID ${options.requiredMcuid}`;
+    if (part.mcuid !== options.requiredMcuid) {
+      fail(
+        'supported-model',
+        'Device model',
+        `This page only supports the ${target}. Detected ${part.partNumber} (MCU ID ${identity.mcuid}).`,
+      );
+    }
+    report({
+      id: 'supported-model',
+      label: 'Device model',
+      status: 'pass',
+      detail: `${target} (${part.partNumber}, MCU ID ${identity.mcuid})`,
+    });
+  }
 
   // 2. Geometry: must have an application region above the flash bootloader.
   const geometry = geometryFor(part);

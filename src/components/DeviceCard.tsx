@@ -7,7 +7,7 @@ function formatBytes(bytes: number): string {
   return bytes >= 1024 ? `${bytes.toLocaleString()} bytes (${(bytes / 1024).toFixed(0)} KB)` : `${bytes} bytes`;
 }
 
-export default function DeviceCard(props: { flasher: Flasher }) {
+export default function DeviceCard(props: { flasher: Flasher; embedded?: boolean }) {
   const connected = () => props.flasher.connection() === 'connected';
 
   const securityLabel = () => {
@@ -47,8 +47,10 @@ export default function DeviceCard(props: { flasher: Flasher }) {
   };
 
   return (
-    <section class="card device">
-      <h2>{t('device.title')}</h2>
+    <section class={props.embedded ? 'device' : 'card device'}>
+      <Show when={!props.embedded}>
+        <h2>{t('device.title')}</h2>
+      </Show>
 
       <div class="row">
         <Show

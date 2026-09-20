@@ -4,15 +4,20 @@ import { t } from '../i18n/context';
 import SetupNotes from './SetupNotes';
 import ThemeChooser from './ThemeChooser';
 
-export default function TopBar(props: { flasher: Flasher }) {
+export default function TopBar(props: {
+  flasher: Flasher;
+  title?: string;
+  subtitle?: string;
+  notes?: boolean;
+}) {
   const unsupported = () => props.flasher.connection() === 'unsupported';
 
   return (
     <header class="topbar">
       <div class="topbar-head">
         <div class="topbar-titles">
-          <h1>{t('app.title')}</h1>
-          <p class="subtitle">{t('app.subtitle')}</p>
+          <h1>{props.title ?? t('app.title')}</h1>
+          <p class="subtitle">{props.subtitle ?? t('app.subtitle')}</p>
         </div>
         <ThemeChooser />
       </div>
@@ -20,7 +25,9 @@ export default function TopBar(props: { flasher: Flasher }) {
         <p class="banner error">{t('top.unsupported')}</p>
       </Show>
       <p class="banner error">{t('setup.warning')}</p>
-      <SetupNotes />
+      <Show when={props.notes ?? true}>
+        <SetupNotes />
+      </Show>
     </header>
   );
 }

@@ -6,6 +6,7 @@ import {
   type RouteSectionProps,
 } from '@solidjs/router';
 import ApplicationPage from './pages/ApplicationPage';
+import Hs611Page from './pages/Hs611Page';
 import DebugPage from './pages/DebugPage';
 import { t } from './i18n/context';
 import './styles/app.css';
@@ -13,6 +14,7 @@ import './styles/app.css';
 const Router = createRouter({
   routes: [
     { path: '/', component: ApplicationPage },
+    { path: '/hs611', component: Hs611Page },
     { path: '/debug', component: DebugPage },
     { path: '*404', component: ApplicationPage },
   ],
@@ -32,6 +34,9 @@ function Layout(props: RouteSectionProps) {
       <nav class="nav">
         <button class={isActive('/') ? 'active' : ''} onClick={() => navigate('/')}>
           {t('nav.application')}
+        </button>
+        <button class={isActive('/hs611') ? 'active' : ''} onClick={() => navigate('/hs611')}>
+          {t('nav.hs611')}
         </button>
         <button class={isActive('/debug') ? 'active' : ''} onClick={() => navigate('/debug')}>
           {t('nav.debug')}

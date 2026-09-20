@@ -90,6 +90,23 @@ describe('runDeviceChecks', () => {
     expect(outcomes).toHaveLength(1);
   });
 
+  it('enforces a required model when one is set', async () => {
+    const device = makeDevice();
+    device.serialNumber = '5C8G0000';
+    const session = createSession(device);
+    await session.open();
+
+    const outcomes: CheckOutcome[] = [];
+    await expect(
+      runDeviceChecks(session, {
+        requiredMcuid: '5R8G',
+        requiredModelLabel: 'Huion HS611',
+        onOutcome: (outcome) => outcomes.push(outcome),
+      }),
+    ).rejects.toMatchObject({ checkId: 'supported-model' });
+    expect(outcomes.at(-1)?.status).toBe('fail');
+  });
+
   it('fails on an unrecognized flash layout', async () => {
     const device = makeDevice();
     device.flash.fill(0xff);

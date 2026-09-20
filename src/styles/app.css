@@ -1275,3 +1275,309 @@ input[type='checkbox'] {
 .modal.wide {
   width: min(580px, 100%);
 }
+
+/* HS611 linear tutorial -------------------------------------------------- */
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.step {
+  position: relative;
+  padding-left: 3.4rem;
+}
+
+.step-num {
+  position: absolute;
+  left: 1rem;
+  top: 0.95rem;
+  width: 1.7rem;
+  height: 1.7rem;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: var(--panel-2);
+  color: var(--ink);
+  box-shadow: 2px 2px 0 var(--shadow);
+}
+
+.step-title h2 {
+  border-bottom: 0;
+  padding-bottom: 0.1rem;
+}
+
+.step-hint {
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-top: 0.7rem;
+}
+
+.step-active {
+  border-color: var(--accent);
+}
+
+.step-active .step-num {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.step-done .step-num {
+  background: var(--success);
+  border-color: var(--success);
+  color: var(--accent-ink);
+}
+
+.step-upcoming {
+  opacity: 0.5;
+}
+
+.step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 1.84rem;
+  top: 2.9rem;
+  bottom: -1.15rem;
+  width: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--line-soft) 0 4px,
+    transparent 4px 8px
+  );
+}
+
+.step-done:not(:last-child)::after {
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--success) 0 4px,
+    transparent 4px 8px
+  );
+}
+
+.step-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Setup helper: Linux/Windows tabs --------------------------------------- */
+
+.setup-helper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.setup-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.setup-heading {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.045em;
+}
+
+.info-mark {
+  display: grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  color: var(--accent);
+  font-size: 0.66rem;
+  font-weight: 700;
+  flex: none;
+}
+
+.os-tabs {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.22rem;
+  border: 2px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  align-self: flex-start;
+}
+
+.os-tabs button {
+  box-shadow: none;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.38rem 0.9rem;
+}
+
+.os-tabs button:hover:not(:disabled) {
+  transform: none;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--ink);
+}
+
+.os-tabs button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.os-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.setup-note {
+  margin: 0;
+  color: var(--success);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+/* Copyable command -------------------------------------------------------- */
+
+.codeblock {
+  display: flex;
+  align-items: stretch;
+  gap: 0.6rem;
+  background: var(--log-bg);
+  color: var(--log-fg);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.65rem 0.75rem;
+}
+
+.codeblock pre {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.codeblock .copy {
+  align-self: flex-start;
+  flex: none;
+  background: var(--panel-2);
+  color: var(--ink);
+  box-shadow: none;
+  padding: 0.32rem 0.55rem;
+  font-size: 0.66rem;
+}
+
+.codeblock .copy:hover:not(:disabled) {
+  transform: none;
+  background: var(--panel);
+}
+
+/* Searchable firmware combobox ------------------------------------------- */
+
+.combo {
+  position: relative;
+}
+
+.combo input {
+  padding-right: 1.9rem;
+}
+
+.combo-caret {
+  position: absolute;
+  right: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--muted);
+}
+
+.combo-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.3rem);
+  z-index: 6;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 4px 4px 0 var(--shadow);
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.combo-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.86rem;
+}
+
+.combo-list li.active {
+  background: color-mix(in srgb, var(--accent) 18%, var(--panel));
+}
+
+.combo-label {
+  font-weight: 600;
+}
+
+.combo-desc {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.combo-list .combo-empty {
+  color: var(--muted);
+  font-size: 0.8rem;
+  cursor: default;
+}
+
+/* DFU animation ----------------------------------------------------------- */
+
+.dfu-figure {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem;
+  background: #0c0c0c;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.dfu-figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 2px;
+}

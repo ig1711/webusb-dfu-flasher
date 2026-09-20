@@ -19,6 +19,7 @@
   "devDependencies": {
     "@solidjs/diagnostics": "^2.0.0-rc.9",
     "@solidjs/vite-plugin": "^3.0.0-next.44",
+    "@types/node": "^26.6.2",
     "eslint-plugin-solid": "~0.18.0",
     "oxlint": "~1.79.0",
     "typescript": "^5.9.2",

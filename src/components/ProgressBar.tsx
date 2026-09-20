@@ -11,11 +11,11 @@ const PHASE_KEYS: Record<ProgressPhase, MessageKey> = {
   read: 'progress.read',
 };
 
-export default function ProgressBar(props: { flasher: Flasher }) {
+export default function ProgressBar(props: { flasher: Flasher; embedded?: boolean }) {
   const progress = () => props.flasher.progress();
 
   return (
-    <section class="card progress">
+    <section class={props.embedded ? 'progress' : 'card progress'}>
       <div class="row space-between">
         <strong>{props.flasher.operation() ?? t('progress.idle')}</strong>
         <span>{progress() ? `${progress()!.percent}%` : ''}</span>

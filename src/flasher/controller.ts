@@ -13,6 +13,7 @@ import { isWritableLevel, type F350OptionBytes } from '../dfu/optionBytes';
 import { isDfuError, PartialWriteError } from '../dfu/errors';
 import { isWebUsbSupported, type UsbDeviceLike } from '../dfu/usb';
 import { createFirmwareImage, type FirmwareImage } from '../firmware/image';
+import { sha256Hex } from '../firmware/hash';
 import { runDeviceChecks, type CheckOutcome, type VerifiedDevice } from './checks';
 import { t } from '../i18n/context';
 import { createLogger } from './log';
@@ -51,6 +52,17 @@ function recordDumped(partNumber: string): void {
 export interface FlasherOptions {
   /** Require a full-flash backup once before enabling writes (application page). */
   requireBackup?: boolean;
+  /** When set, verification only accepts this MCU ID (single-tablet pages). */
+  requiredMcuid?: string;
+  /** Name of the required device, used in the verification failure message. */
+  requiredModelLabel?: string;
+}
+
+/** A statically served firmware asset with an optional integrity pin. */
+export interface FirmwareSource {
+  file: string;
+  label: string;
+  sha256?: string;
 }
 
 export interface BurnOptions {
@@ -136,6 +148,8 @@ export function createFlasher(options: FlasherOptions = {}) {
       setConnection('connected');
       const device = await runDeviceChecks(session, {
         onOutcome: (outcome) => setChecks((previous) => [...previous, outcome]),
+        requiredMcuid: options.requiredMcuid,
+        requiredModelLabel: options.requiredModelLabel,
       });
       setVerified(device);
       setOptionBytes(device.optionBytes);
@@ -180,6 +194,12 @@ export function createFlasher(options: FlasherOptions = {}) {
 
   // --- firmware -----------------------------------------------------------
 
+  function applyBytes(bytes: Uint8Array, name: string): void {
+    const loaded = createFirmwareImage(bytes, name);
+    setImage(loaded);
+    logger.append(t('firmware.loaded', { name, bytes: loaded.totalBytes }), 'success');
+  }
+
   function loadFile(file: File): void {
     if (!canModify() || !verified()) {
       logger.append(blockReason() || t('gate.backup_first'), 'error');
@@ -188,18 +208,39 @@ export function createFlasher(options: FlasherOptions = {}) {
     setFileName(file.name);
     void file
       .arrayBuffer()
-      .then((buffer) => {
-        const loaded = createFirmwareImage(new Uint8Array(buffer), file.name);
-        setImage(loaded);
-        logger.append(
-          t('firmware.loaded', { name: file.name, bytes: loaded.totalBytes }),
-          'success',
-        );
-      })
+      .then((buffer) => applyBytes(new Uint8Array(buffer), file.name))
       .catch((error) => {
         setImage(null);
         logger.append(describeError(error), 'error');
       });
+  }
+
+  /** Fetch a catalog binary, verify it if pinned, and load it as the image. */
+  async function loadFromUrl(source: FirmwareSource): Promise<void> {
+    if (!canModify() || !verified()) {
+      logger.append(blockReason() || t('gate.backup_first'), 'error');
+      return;
+    }
+    setFileName(source.label);
+    try {
+      const response = await fetch(source.file);
+      if (!response.ok) {
+        throw new Error(`Firmware download failed (HTTP ${response.status}).`);
+      }
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      if (source.sha256) {
+        const digest = await sha256Hex(bytes);
+        if (digest !== source.sha256.toLowerCase()) {
+          throw new Error(
+            'Firmware integrity check failed: the downloaded file does not match its published SHA-256.',
+          );
+        }
+      }
+      applyBytes(bytes, source.label);
+    } catch (error) {
+      setImage(null);
+      logger.append(describeError(error), 'error');
+    }
   }
 
   function clearImage(): void {
@@ -234,17 +275,17 @@ export function createFlasher(options: FlasherOptions = {}) {
 
   // --- flash operations ---------------------------------------------------
 
-  async function burn(options: BurnOptions): Promise<void> {
+  async function burn(options: BurnOptions): Promise<boolean> {
     const current = verified();
     const currentImage = image();
     const reason = blockReason();
     if (reason) {
       logger.append(reason, 'error');
-      return;
+      return false;
     }
-    if (!current || !currentImage) return;
+    if (!current || !currentImage) return false;
 
-    await guarded('Write firmware', async () => {
+    return guarded('Write firmware', async () => {
       const controller = new AbortController();
       abortController = controller;
       try {
@@ -330,6 +371,7 @@ export function createFlasher(options: FlasherOptions = {}) {
     disconnect,
     onDeviceDisconnected,
     loadFile,
+    loadFromUrl,
     clearImage,
     readBackup,
     burn,
