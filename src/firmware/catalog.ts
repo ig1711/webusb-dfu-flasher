@@ -31,4 +31,12 @@ export const HS611_FIRMWARES: readonly Hs611Firmware[] = [
     sha256: 'fe6fe43a8d718022fe0c9661cc96dc85580069a1a9077996241ce070b9ffe625',
     bytes: 49152,
   },
+  {
+    id: 'hs611-stock',
+    label: 'HS611 Stock (Original)',
+    description: 'Factory firmware, unmodified',
+    file: '/GD32F350R8T6_app.original.bin',
+    sha256: '8be9f0812baa9f83df025fbd39af8b620234ae364c51e687bfe06817dc367a73',
+    bytes: 49152,
+  },
 ];
