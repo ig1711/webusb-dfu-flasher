@@ -28,7 +28,7 @@ export const HS611_FIRMWARES: readonly Hs611Firmware[] = [
     label: 'HS611 480 Hz',
     description: 'Low Latency and Stable (Debloated + Smoothing Removed)',
     file: '/GD32F350R8T6_app.penonly.bin',
-    sha256: 'fe6fe43a8d718022fe0c9661cc96dc85580069a1a9077996241ce070b9ffe625',
+    sha256: 'e8c70cda1a3e3ee4ba2007cd5454e306fbc8b2c77a7d1d496ca3585c5bd4efe4',
     bytes: 49152,
   },
   {
