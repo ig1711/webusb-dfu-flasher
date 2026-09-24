@@ -32,6 +32,14 @@ export const HS611_FIRMWARES: readonly Hs611Firmware[] = [
     bytes: 49152,
   },
   {
+    id: 'hs611-1000hz',
+    label: 'HS611 1000 Hz (Unstable)',
+    description: 'Custom Firmware (Position Only, No Tip)',
+    file: '/GD32F350R8T6_app.cfw.bin',
+    sha256: '0e5301d846912c8144eddb3aa669aa46a42e95e3b0229d3931f21201b68e53cf',
+    bytes: 19692,
+  },
+  {
     id: 'hs611-stock',
     label: 'HS611 Stock (Original)',
     description: 'Factory firmware, unmodified',

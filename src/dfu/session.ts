@@ -7,6 +7,7 @@
  */
 
 import {
+  APP_BASE,
   DfuRequest,
   DfuSeCommand,
   DfuState,
@@ -39,6 +40,7 @@ import {
   assertAppRange,
   assertFlashRange,
   assertPageAligned,
+  flashEnd,
   formatAddress,
   pagesForRange,
   type FlashGeometry,
@@ -425,13 +427,7 @@ export class DfuSession {
 
     try {
       if (eraseFirst) {
-        const pageSet = new Set<number>();
-        for (const segment of image.segments) {
-          for (const page of pagesForRange(segment.address, segment.data.length, geometry)) {
-            pageSet.add(page);
-          }
-        }
-        const pages = [...pageSet].sort((a, b) => a - b);
+        const pages = pagesForRange(APP_BASE, flashEnd(geometry) - APP_BASE, geometry);
         for (let index = 0; index < pages.length; index++) {
           throwIfAborted(options.signal);
           await this.eraseSector(pages[index], geometry);
